@@ -1,3 +1,5 @@
+// src/index.js
+
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -23,7 +25,7 @@ app.use("/api/players", playerRoutes);
 app.use("/api/compare", compareRoutes);
 app.use("/api/stats", statsRoutes);
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`✅ Server running at http://localhost:${PORT}`);
+  console.log(`✅ Server running on port ${PORT}`);
 });
