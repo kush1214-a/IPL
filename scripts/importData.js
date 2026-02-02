@@ -1,17 +1,21 @@
 /**
  * IPL JSON Bulk Import Script
- * Beginner Safe Version
+ * ES Module Compatible (Render Ready)
  */
 
-const fs = require("fs");          // ✅ MUST BE ON TOP
-const path = require("path");
-const { PrismaClient } = require("@prisma/client");
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+// 🔧 __dirname fix for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // 📂 JSON files folder
 const DATA_DIR = path.join(__dirname, "../data/json");
-
 
 async function main() {
   const files = fs.readdirSync(DATA_DIR).filter(file => file.endsWith(".json"));
@@ -80,20 +84,18 @@ async function main() {
 
       /* ================= STATS ================= */
       await prisma.playerStat.create({
-  data: {
-    matches: item.matches || 0,
-    runs: item.runs || 0,
-    highest: item.highest || 0,
-    average: item.average ? parseFloat(item.average) : null,
-    strike: item.strike ? parseFloat(item.strike) : null,
-    fours: item.run4 || 0,
-    sixes: item.run6 || 0,
-    statType,
-    playerId: player.id
-  }
-});
-
-
+        data: {
+          matches: item.matches || 0,
+          runs: item.runs || 0,
+          highest: item.highest || 0,
+          average: item.average ? parseFloat(item.average) : null,
+          strike: item.strike ? parseFloat(item.strike) : null,
+          fours: item.run4 || 0,
+          sixes: item.run6 || 0,
+          statType,
+          playerId: player.id
+        }
+      });
     }
 
     console.log("✅ Imported:", file);
@@ -105,6 +107,7 @@ async function main() {
 main()
   .catch(err => {
     console.error("🔥 ERROR:", err);
+    process.exit(1);
   })
   .finally(async () => {
     await prisma.$disconnect();
