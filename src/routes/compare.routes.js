@@ -4,63 +4,61 @@ import prisma from "../prisma.js";
 const router = Router();
 
 /**
- * GET /api/compare?teamA=CSK&teamB=MI
+ * GET /api/compare/teams?teamA=MI&teamB=PBKS
  */
-router.get("/", async (req, res) => {
+router.get("/teams", async (req, res) => {
   try {
     const { teamA, teamB } = req.query;
 
     if (!teamA || !teamB) {
-      return res.status(400).json({
-        message: "teamA and teamB are required",
-      });
+      return res.status(400).json({ error: "teamA and teamB required" });
     }
 
-    const teams = await prisma.team.findMany({
+    // fetch teams
+    const [A, B] = await Promise.all([
+      prisma.team.findFirst({ where: { short: teamA } }),
+      prisma.team.findFirst({ where: { short: teamB } })
+    ]);
+
+    if (!A || !B) {
+      return res.status(404).json({ error: "Team not found" });
+    }
+
+    // aggregate stats from matches table (example logic)
+    const matches = await prisma.match.findMany({
       where: {
-        short: { in: [teamA, teamB] },
-      },
-      include: {
-        players: {
-          include: {
-            stats: true,
-          },
-        },
-      },
+        OR: [
+          { teamAId: A.id, teamBId: B.id },
+          { teamAId: B.id, teamBId: A.id }
+        ]
+      }
     });
 
-    if (teams.length !== 2) {
-      return res.status(404).json({
-        message: "Teams not found",
-      });
-    }
+    let stats = {
+      playedA: matches.length,
+      playedB: matches.length,
+      winsA: 0,
+      winsB: 0,
+      lostA: 0,
+      lostB: 0,
+      noResultA: 0,
+      noResultB: 0
+    };
 
-    const result = teams.map((team) => {
-      let totalRuns = 0;
-      let totalMatches = 0;
-      let totalWickets = 0;
-
-      team.players.forEach((player) => {
-        player.stats.forEach((stat) => {
-          totalRuns += stat.runs || 0;
-          totalMatches += stat.matches || 0;
-          totalWickets += stat.wickets || 0;
-        });
-      });
-
-      return {
-        name: team.name,
-        short: team.short,
-        players: team.players.length,
-        totalRuns,
-        totalMatches,
-        totalWickets,
-      };
+    matches.forEach(m => {
+      if (m.winnerId === A.id) {
+        stats.winsA++; stats.lostB++;
+      } else if (m.winnerId === B.id) {
+        stats.winsB++; stats.lostA++;
+      } else {
+        stats.noResultA++; stats.noResultB++;
+      }
     });
 
-    res.json(result);
+    res.json(stats);
+
   } catch (err) {
-    console.error("COMPARE ERROR:", err);
+    console.error("Compare error:", err);
     res.status(500).json({ error: "Compare failed" });
   }
 });
