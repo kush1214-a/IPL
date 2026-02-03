@@ -1,47 +1,24 @@
-// src/routes/compare.routes.js
-
 import { Router } from "express";
 import prisma from "../prisma.js";
 
 const router = Router();
 
 /**
- * @swagger
- * /api/compare:
- *   get:
- *     summary: Compare two IPL teams
- *     tags:
- *       - Compare
- *     parameters:
- *       - in: query
- *         name: teamA
- *         required: true
- *         schema:
- *           type: string
- *       - in: query
- *         name: teamB
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Team comparison result
+ * GET /api/compare?teamA=CSK&teamB=MI
  */
 router.get("/", async (req, res) => {
   try {
     const { teamA, teamB } = req.query;
 
     if (!teamA || !teamB) {
-      return res
-        .status(400)
-        .json({ message: "teamA and teamB query params required" });
+      return res.status(400).json({
+        message: "teamA and teamB are required",
+      });
     }
 
     const teams = await prisma.team.findMany({
       where: {
-        short: {
-          in: [teamA, teamB],
-        },
+        short: { in: [teamA, teamB] },
       },
       include: {
         players: {
@@ -53,33 +30,38 @@ router.get("/", async (req, res) => {
     });
 
     if (teams.length !== 2) {
-      return res.status(404).json({ message: "Teams not found" });
+      return res.status(404).json({
+        message: "Teams not found",
+      });
     }
 
     const result = teams.map((team) => {
       let totalRuns = 0;
       let totalMatches = 0;
+      let totalWickets = 0;
 
       team.players.forEach((player) => {
         player.stats.forEach((stat) => {
           totalRuns += stat.runs || 0;
           totalMatches += stat.matches || 0;
+          totalWickets += stat.wickets || 0;
         });
       });
 
       return {
-        team: team.name,
+        name: team.name,
         short: team.short,
         players: team.players.length,
         totalRuns,
         totalMatches,
+        totalWickets,
       };
     });
 
     res.json(result);
   } catch (err) {
-    console.error("COMPARE ROUTE ERROR:", err);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("COMPARE ERROR:", err);
+    res.status(500).json({ error: "Compare failed" });
   }
 });
 
