@@ -16,26 +16,44 @@ model Team {
 }
 
 model Player {
-  id        Int      @id @default(autoincrement())
-  name      String
-  country   String
-  batting   String
-  bowling   String
+  id        Int          @id @default(autoincrement())
+  name      String       @unique   // ✅ THIS IS THE KEY FIX
+  country   String?
+  role      String?
+  batting   String?
+  bowling   String?
   teamId    Int
-  team      Team     @relation(fields: [teamId], references: [id])
+  team      Team         @relation(fields: [teamId], references: [id])
   stats     PlayerStat[]
 }
 
+
 model PlayerStat {
-  id        Int     @id @default(autoincrement())
-  matches   Int
-  runs      Int
-  highest   Int
-  average   Float?
-  strike    Float?
-  fours     Int?
-  sixes     Int?
+  id        Int      @id @default(autoincrement())
   statType  String
-  playerId  Int
-  player    Player  @relation(fields: [playerId], references: [id])
+  matches   Int      @default(0)
+  runs      Int      @default(0)
+  highest   Int      @default(0)
+  average   Float?   // OPTIONAL
+  strike    Float?   // OPTIONAL
+  fours     Int      @default(0)
+  sixes     Int      @default(0)
+  wickets   Int      @default(0)
+  playerId Int
+  player   Player   @relation(fields: [playerId], references: [id])
+}
+
+model RawPlayerStat {
+  id        Int     @id @default(autoincrement())
+  player    String
+  statType  String
+  matches   Int     @default(0)
+  runs      Int     @default(0)
+  highest   Int     @default(0)
+  average   Float   @default(0)
+  strike    Float   @default(0)
+  fours     Int     @default(0)
+  sixes     Int     @default(0)
+  source    String  // file name
+  createdAt DateTime @default(now())
 }

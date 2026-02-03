@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "PlayerStat" ALTER COLUMN "matches" DROP NOT NULL,
+ALTER COLUMN "runs" DROP NOT NULL,
+ALTER COLUMN "highest" DROP NOT NULL;

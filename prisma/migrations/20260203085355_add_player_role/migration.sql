@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "Player" ADD COLUMN     "role" TEXT,
+ALTER COLUMN "country" DROP NOT NULL,
+ALTER COLUMN "batting" DROP NOT NULL,
+ALTER COLUMN "bowling" DROP NOT NULL;

@@ -1,0 +1,17 @@
+-- CreateTable
+CREATE TABLE "RawPlayerStat" (
+    "id" SERIAL NOT NULL,
+    "player" TEXT NOT NULL,
+    "statType" TEXT NOT NULL,
+    "matches" INTEGER NOT NULL DEFAULT 0,
+    "runs" INTEGER NOT NULL DEFAULT 0,
+    "highest" INTEGER NOT NULL DEFAULT 0,
+    "average" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "strike" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "fours" INTEGER NOT NULL DEFAULT 0,
+    "sixes" INTEGER NOT NULL DEFAULT 0,
+    "source" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "RawPlayerStat_pkey" PRIMARY KEY ("id")
+);
