@@ -6,24 +6,33 @@ const prisma = new PrismaClient();
 
 router.get("/", async (req, res) => {
   try {
-    const page = Number(req.query.page) || 1;
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
     const limit = 10;
+
+    const total = await prisma.player.count();
+    const totalPages = Math.ceil(total / limit);
+
+    // ✅ IMPORTANT FIX: invalid page guard
+    if (page > totalPages) {
+      return res.json({
+        data: [],
+        page,
+        totalPages,
+        total
+      });
+    }
+
     const skip = (page - 1) * limit;
 
-    const [players, total] = await Promise.all([
-      prisma.player.findMany({
-        skip,
-        take: limit,
-        orderBy: { name: "asc" },
-        include: {
-          team: true,
-          stats: true
-        }
-      }),
-      prisma.player.count()
-    ]);
-
-    const totalPages = Math.ceil(total / limit);
+    const players = await prisma.player.findMany({
+      skip,
+      take: limit,
+      orderBy: { name: "asc" },
+      include: {
+        team: true,
+        stats: true
+      }
+    });
 
     res.json({
       data: players,
