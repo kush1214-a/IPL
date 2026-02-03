@@ -9,56 +9,52 @@ const router = Router();
 router.get("/teams", async (req, res) => {
   try {
     const { teamA, teamB } = req.query;
-
     if (!teamA || !teamB) {
       return res.status(400).json({ error: "teamA and teamB required" });
     }
 
-    // fetch teams
-    const [A, B] = await Promise.all([
-      prisma.team.findFirst({ where: { short: teamA } }),
-      prisma.team.findFirst({ where: { short: teamB } })
-    ]);
+    const teams = await prisma.team.findMany({
+      where: { short: { in: [teamA, teamB] } },
+      include: {
+        players: {
+          include: { stats: true }
+        }
+      }
+    });
 
-    if (!A || !B) {
-      return res.status(404).json({ error: "Team not found" });
+    if (teams.length !== 2) {
+      return res.status(404).json({ error: "Teams not found" });
     }
 
-    // aggregate stats from matches table (example logic)
-    const matches = await prisma.match.findMany({
-      where: {
-        OR: [
-          { teamAId: A.id, teamBId: B.id },
-          { teamAId: B.id, teamBId: A.id }
-        ]
-      }
-    });
+    const buildStats = (team) => {
+      let matches = 0, runs = 0, wickets = 0;
 
-    let stats = {
-      playedA: matches.length,
-      playedB: matches.length,
-      winsA: 0,
-      winsB: 0,
-      lostA: 0,
-      lostB: 0,
-      noResultA: 0,
-      noResultB: 0
+      team.players.forEach(p => {
+        p.stats.forEach(s => {
+          matches += s.matches || 0;
+          runs += s.runs || 0;
+          wickets += s.wickets || 0;
+        });
+      });
+
+      return {
+        id: team.id,
+        name: team.name,
+        short: team.short,
+        logo: team.logo,
+        players: team.players.length,
+        matches,
+        runs,
+        wickets
+      };
     };
 
-    matches.forEach(m => {
-      if (m.winnerId === A.id) {
-        stats.winsA++; stats.lostB++;
-      } else if (m.winnerId === B.id) {
-        stats.winsB++; stats.lostA++;
-      } else {
-        stats.noResultA++; stats.noResultB++;
-      }
-    });
+    const [A, B] = teams.map(buildStats);
 
-    res.json(stats);
+    res.json({ teamA: A, teamB: B });
 
   } catch (err) {
-    console.error("Compare error:", err);
+    console.error("COMPARE ERROR:", err);
     res.status(500).json({ error: "Compare failed" });
   }
 });
