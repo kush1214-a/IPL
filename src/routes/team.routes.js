@@ -1,51 +1,35 @@
-// src/routes/team.routes.js
+import express from "express";
+import { PrismaClient } from "@prisma/client";
 
-import { Router } from "express";
-import prisma from "../prisma.js";
-
-const router = Router();
+const router = express.Router();
+const prisma = new PrismaClient();
 
 /**
- * GET /api/teams
+ * GET all teams
  */
 router.get("/", async (req, res) => {
-  try {
-    const teams = await prisma.team.findMany({
-      orderBy: { name: "asc" },
-    });
-    res.json(teams);
-  } catch (err) {
-    res.status(500).json({ error: "Failed to fetch teams" });
-  }
+  const teams = await prisma.team.findMany();
+  res.json(teams);
 });
 
 /**
- * GET /api/teams/:short
- * Example: /api/teams/CSK
+ * GET team by short code (RCB, KKR, CSK)
  */
 router.get("/:short", async (req, res) => {
-  try {
-    const { short } = req.params;
+  const { short } = req.params;
 
-    const team = await prisma.team.findFirst({
-      where: { short },
-      include: {
-        players: {
-          include: {
-            stats: true,
-          },
-        },
-      },
-    });
+  const team = await prisma.team.findFirst({
+    where: { short },
+    include: {
+      players: true,
+    },
+  });
 
-    if (!team) {
-      return res.status(404).json({ error: "Team not found" });
-    }
-
-    res.json(team);
-  } catch (err) {
-    res.status(500).json({ error: "Failed to fetch team" });
+  if (!team) {
+    return res.status(404).json({ error: "Team not found" });
   }
+
+  res.json(team);
 });
 
 export default router;
