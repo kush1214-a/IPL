@@ -1,48 +1,55 @@
+// backend/scripts/fix_player_role.js
+// FINAL & PRODUCTION SAFE ROLE FIX SCRIPT
+
 import prisma from "../src/prisma.js";
 
-const ROLE_MAP = {
-  bat: "BATTER",
-  bowl: "BOWLER",
-  all: "ALL-ROUNDER",
-  wk: "WICKET-KEEPER",
-};
+async function fixPlayerRoles() {
+  console.log("🔧 Fixing player roles using STATS (not batting/bowling style)...");
 
-async function run() {
-  const players = await prisma.player.findMany();
+  const players = await prisma.player.findMany({
+    include: { stats: true }
+  });
 
   let updated = 0;
-  let skipped = 0;
 
-  for (const p of players) {
-    if (p.role) {
-      skipped++;
-      continue;
+  for (const player of players) {
+    let hasBatting = false;
+    let hasBowling = false;
+
+    for (const stat of player.stats) {
+      if (stat.statType && stat.statType.startsWith("batting")) {
+        hasBatting = true;
+      }
+      if (stat.statType && stat.statType.startsWith("bowling")) {
+        hasBowling = true;
+      }
     }
 
-    let role = null;
+    let role = "PLAYER";
 
-    if (p.batting && p.bowling) role = "ALL-ROUNDER";
-    else if (p.batting) role = "BATTER";
-    else if (p.bowling) role = "BOWLER";
+    if (hasBatting && hasBowling) role = "ALL-ROUNDER";
+    else if (hasBatting) role = "BATTER";
+    else if (hasBowling) role = "BOWLER";
 
-    if (!role) {
-      skipped++;
-      continue;
+    // UPDATE ONLY IF DIFFERENT
+    if (player.role !== role) {
+      await prisma.player.update({
+        where: { id: player.id },
+        data: { role }
+      });
+      updated++;
     }
-
-    await prisma.player.update({
-      where: { id: p.id },
-      data: { role },
-    });
-
-    updated++;
   }
 
-  console.log("🎉 ROLE FIX DONE");
-  console.log("Updated:", updated);
-  console.log("Skipped:", skipped);
+  console.log("✅ Player roles fixed successfully");
+  console.log("🔁 Players updated:", updated);
 }
 
-run()
-  .catch(console.error)
-  .finally(() => prisma.$disconnect());
+fixPlayerRoles()
+  .catch((err) => {
+    console.error("❌ Error fixing player roles:", err);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
+

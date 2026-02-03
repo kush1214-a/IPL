@@ -8,12 +8,18 @@ datasource db {
 }
 
 model Team {
-  id      Int      @id @default(autoincrement())
-  name    String
-  short   String
-  logo    String
-  players Player[]
+  id        Int      @id @default(autoincrement())
+  name      String
+  short     String
+  logo      String
+  captain   String?
+  coach     String?
+  owner     String?
+  venue     String?
+  titles    Int[]    // e.g. [2008, 2010, 2011]
+  players   Player[]
 }
+
 
 model Player {
   id        Int          @id @default(autoincrement())

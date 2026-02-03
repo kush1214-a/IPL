@@ -8,7 +8,8 @@ import teamRoutes from "./routes/team.routes.js";
 import playerRoutes from "./routes/player.routes.js";
 import compareRoutes from "./routes/compare.routes.js";
 import statsRoutes from "./routes/stats.routes.js";
-
+import swaggerUi from "swagger-ui-express";
+import swaggerSpec from "./swagger.js";
 dotenv.config();
 
 const app = express();
@@ -24,6 +25,7 @@ app.use("/api/teams", teamRoutes);
 app.use("/api/players", playerRoutes);
 app.use("/api/compare", compareRoutes);
 app.use("/api/stats", statsRoutes);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
