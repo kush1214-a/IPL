@@ -10,19 +10,29 @@ router.get("/", async (req, res) => {
     const limit = 10;
     const skip = (page - 1) * limit;
 
-    const players = await prisma.player.findMany({
-      skip,
-      take: limit,
-      include: {
-        team: true,
-        stats: true
-      },
-      orderBy: { name: "asc" }
-    });
+    const [players, total] = await Promise.all([
+      prisma.player.findMany({
+        skip,
+        take: limit,
+        orderBy: { name: "asc" },
+        include: {
+          team: true,
+          stats: true
+        }
+      }),
+      prisma.player.count()
+    ]);
 
-    res.json(players);
+    const totalPages = Math.ceil(total / limit);
+
+    res.json({
+      data: players,
+      page,
+      totalPages,
+      total
+    });
   } catch (e) {
-    console.error(e);
+    console.error("Players fetch error:", e);
     res.status(500).json({ error: "Failed to fetch players" });
   }
 });
